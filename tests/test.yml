@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  gather_facts: false
+  roles:
+    - role: ../..
+  vars:
+    nutanix_host: 10.38.185.37
+    nutanix_username: admin
+    nutanix_password: nx2Tech165!
+    # nutanix_debug: True
+    nutanix_proxy_name: test
+    nutanix_proxy_address: 10.10.10.10
+    nutanix_proxy_port: 8080
+    nutanix_proxy_types:
+      - http
+      - https
+    nutanix_proxy_whitelist:
+      - "*.ntnxlab.local"

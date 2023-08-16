@@ -1,0 +1,8 @@
+address: "{{ nutanix_proxy_address }}"
+port: {{ nutanix_proxy_port }}
+name: "{{ nutanix_proxy_name }}"
+{% if nutanix_proxy_username | default("") != "" and nutanix_proxy_password | default("") != "" %}
+username: "{{ nutanix_proxy_username }}"
+password: "{{ nutanix_proxy_password }}"
+{% endif %}
+proxy_types: {{ nutanix_proxy_types }}
