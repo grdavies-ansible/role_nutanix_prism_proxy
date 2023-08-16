@@ -1,24 +1,24 @@
 ---
 - name: Gather proxy configuration from cluster
-  uri:
+  ansible.builtin.uri:
     url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies"
     method: GET
     validate_certs: "{{ validate_certs }}"
     body_format: json
     headers:
       Authorization: "{{ nutanix_api_auth }}"
-    return_content: yes
+    return_content: true
   register: nutanix_configured_proxies
 
-- name: compare current proxy name to new proxy name
-  set_fact:
+- name: Compare current proxy name to new proxy name
+  ansible.builtin.set_fact:
     nutanix_proxy_name_mismatch:
   when:
     - nutanix_configured_proxies.json.metadata.count == 1
     - nutanix_configured_proxies.json.entities[0].name != nutanix_proxy_name
 
-- name: compare current proxy config to new proxy config
-  set_fact:
+- name: Compare current proxy config to new proxy config
+  ansible.builtin.set_fact:
     nutanix_proxy_config_mismatch:
   when:
     - nutanix_configured_proxies.json.metadata.count == 1
@@ -26,24 +26,24 @@
       nutanix_configured_proxies.json.entities[0].port != nutanix_proxy_port or
       nutanix_configured_proxies.json.entities[0].username != nutanix_proxy_username | default(None) )
 
-- name: compare configured proxy types to defined proxy types
-  set_fact:
+- name: Compare configured proxy types to defined proxy types
+  ansible.builtin.set_fact:
     nutanix_proxy_extra_type:
   when:
     - nutanix_configured_proxies.json.metadata.count == 1
     - item not in nutanix_proxy_types
   with_items: "{{ nutanix_configured_proxies.json.entities[0].proxy_types }}"
 
-- name: compare defined proxy types to configured proxy types
-  set_fact:
+- name: Compare defined proxy types to configured proxy types
+  ansible.builtin.set_fact:
     nutanix_proxy_missing_type:
   when:
     - nutanix_configured_proxies.json.metadata.count == 1
     - item not in nutanix_configured_proxies.json.entities[0].proxy_types
   with_items: "{{ nutanix_proxy_types }}"
 
-- name: delete prism proxy configuration to fix name mismatch
-  uri:
+- name: Delete prism proxy configuration to fix name mismatch
+  ansible.builtin.uri:
     url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies/{{ nutanix_configured_proxies.json.entities[0].name }}"
     method: DELETE
     validate_certs: "{{ validate_certs }}"
@@ -51,15 +51,15 @@
     headers:
       Authorization: "{{ nutanix_api_auth }}"
     status_code: 204
-    return_content: yes
+    return_content: true
   changed_when: true
   register: nutanix_proxy_deleted
   when:
     - nutanix_configured_proxies.json.metadata.count == 1
     - nutanix_proxy_name_mismatch is defined
 
-- name: create proxy configuration
-  uri:
+- name: Create proxy configuration
+  ansible.builtin.uri:
     url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies"
     method: POST
     validate_certs: "{{ validate_certs }}"
@@ -68,13 +68,13 @@
     status_code: 201
     headers:
       Authorization: "{{ nutanix_api_auth }}"
-    return_content: yes
+    return_content: true
   register: nutanix_create_proxy
   when:
     - nutanix_configured_proxies.json.metadata.count == 0 or nutanix_proxy_name_mismatch is defined
 
-- name: update proxy configuration
-  uri:
+- name: Update proxy configuration
+  ansible.builtin.uri:
     url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies"
     method: PUT
     validate_certs: "{{ validate_certs }}"
@@ -83,7 +83,7 @@
     status_code: 200
     headers:
       Authorization: "{{ nutanix_api_auth }}"
-    return_content: yes
+    return_content: true
   register: nutanix_update_proxy
   changed_when: nutanix_update_proxy.json.value == true
   when:
@@ -94,7 +94,7 @@
 - name: Wait HTTP proxy update to be completed
   block:
     - name: Checking HTTP proxy configuration
-      uri:
+      ansible.builtin.uri:
         url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies"
         method: GET
         validate_certs: "{{ validate_certs }}"
