@@ -1,57 +1,82 @@
 ---
 - name: Gather proxy configuration from cluster
   ansible.builtin.uri:
-    url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies"
+    url: "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v2.0/http_proxies"
     method: GET
-    validate_certs: "{{ validate_certs }}"
+    validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs }}"
     body_format: json
     headers:
-      Authorization: "{{ nutanix_api_auth }}"
+      Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
     return_content: true
-  register: nutanix_configured_proxies
+  register: role_nutanix_prism_proxy_current_config
+
+- name: Debug role_nutanix_prism_proxy_current_config
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_current_config }}"
+  when: role_nutanix_prism_proxy_debug
 
 - name: Gather proxy whitelist
   ansible.builtin.uri:
-    url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v1/http_proxies/whitelist"
+    url: "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v1/http_proxies/whitelist"
     method: GET
-    validate_certs: "{{ validate_certs }}"
+    validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs }}"
     body_format: json
     headers:
-      Authorization: "{{ nutanix_api_auth }}"
+      Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
     return_content: true
-  register: nutanix_current_proxy_whitelist
+  register: role_nutanix_prism_proxy_whitelist_current
+
+- name: Debug role_nutanix_prism_proxy_whitelist_current
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_whitelist_current }}"
+  when: role_nutanix_prism_proxy_debug
 
 - name: Compare configured proxy whitelist to defined proxy whitelist
   ansible.builtin.set_fact:
-    nutanix_proxy_whitelist_extra:
-  loop: "{{ nutanix_current_proxy_whitelist.json.whitelist | map(attribute='target') | list }}"
-  register: compare_configured_whitelist
+    role_nutanix_prism_proxy_whitelist_extra:
+  loop: "{{ role_nutanix_prism_proxy_whitelist_current.json.whitelist | map(attribute='target') | list }}"
+  register: role_nutanix_prism_proxy_compare_configured_whitelist
   when:
-    - nutanix_current_proxy_whitelist.json.whitelist | length() > 0
-    - item not in nutanix_proxy_whitelist
-    - nutanix_configured_proxies.json.metadata.count == 1
+    - role_nutanix_prism_proxy_whitelist_current.json.whitelist | length() > 0
+    - item not in role_nutanix_prism_proxy_whitelist
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 1
+
+- name: Debug role_nutanix_prism_proxy_compare_configured_whitelist
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_compare_configured_whitelist }}"
+  when: role_nutanix_prism_proxy_debug
 
 - name: Compare defined proxy whitelist to configured proxy whitelist
   ansible.builtin.set_fact:
-    nutanix_proxy_whitelist_missing:
-  loop: "{{ nutanix_proxy_whitelist }}"
+    role_nutanix_prism_proxy_whitelist_missing:
+  loop: "{{ role_nutanix_prism_proxy_whitelist }}"
   register: compare_defined_whitelist
   when:
-    - item not in nutanix_current_proxy_whitelist.json.whitelist | map(attribute='target') | list
-    - nutanix_configured_proxies.json.metadata.count == 1
+    - item not in role_nutanix_prism_proxy_whitelist_current.json.whitelist | map(attribute='target') | list
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 1
+
+- name: Debug role_nutanix_prism_proxy_whitelist_missing
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_whitelist_missing }}"
+  when: role_nutanix_prism_proxy_debug
 
 - name: Update proxy whitelist
   ansible.builtin.uri:
-    url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v1/http_proxies/whitelist"
+    url: "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v1/http_proxies/whitelist"
     method: PUT
-    validate_certs: "{{ validate_certs }}"
+    validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs }}"
     body: "{{ lookup('template', 'proxy_whitelist.j2') | from_yaml | to_json }}"
     body_format: json
     headers:
-      Authorization: "{{ nutanix_api_auth }}"
+      Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
     return_content: true
   changed_when: true
-  register: nutanix_proxy_whitelist_update
+  register: role_nutanix_prism_proxy_whitelist_update
   when:
-    - nutanix_configured_proxies.json.metadata.count == 1
-    - nutanix_proxy_whitelist_extra is defined or nutanix_proxy_whitelist_missing is defined
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 1
+    - role_nutanix_prism_proxy_whitelist_extra is defined or role_nutanix_prism_proxy_whitelist_missing is defined
+
+- name: Debug role_nutanix_prism_proxy_whitelist_update
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_whitelist_update }}"
+  when: role_nutanix_prism_proxy_debug

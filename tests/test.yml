@@ -4,15 +4,15 @@
   roles:
     - role: ../..
   vars:
-    nutanix_host: 10.38.185.37
-    nutanix_username: admin
-    nutanix_password: nx2Tech165!
-    # nutanix_debug: True
-    nutanix_proxy_name: test
-    nutanix_proxy_address: 10.10.10.10
-    nutanix_proxy_port: 8080
-    nutanix_proxy_types:
+    role_nutanix_prism_proxy_host: 10.38.67.37
+    role_nutanix_prism_proxy_host_username: admin
+    role_nutanix_prism_proxy_host_password: nx2Tech454!
+    role_nutanix_prism_proxy_debug: true
+    role_nutanix_prism_proxy_name: test
+    role_nutanix_prism_proxy_address: 10.10.10.10
+    role_nutanix_prism_proxy_port: 8080
+    role_nutanix_prism_proxy_types:
       - http
       - https
-    nutanix_proxy_whitelist:
+    role_nutanix_prism_proxy_whitelist:
       - "*.ntnxlab.local"

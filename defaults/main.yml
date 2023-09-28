@@ -1,11 +1,11 @@
 ---
 # defaults file for nutanix_role_nutanix_proxy
-nutanix_host: ""
-nutanix_username: ""
-nutanix_password: ""
-nutanix_port: 9440
-validate_certs: false
-nutanix_debug: false
-nutanix_proxy_whitelist: []
-nutanix_proxy_types:
+role_nutanix_prism_proxy_host: ""
+role_nutanix_prism_proxy_host_username: ""
+role_nutanix_prism_proxy_host_password: ""
+role_nutanix_prism_proxy_host_port: 9440
+role_nutanix_prism_proxy_host_validate_certs: false
+role_nutanix_prism_proxy_debug: false
+role_nutanix_prism_proxy_whitelist: []
+role_nutanix_prism_proxy_types:
   - "HTTP"

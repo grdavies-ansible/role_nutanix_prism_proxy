@@ -1,39 +1,42 @@
-# tasks file for nutanix_role_nutanix_proxy
-- name: Check nutanix_proxy_name is provided
+# tasks file for role_nutanix_prism_proxy
+- name: Check role_nutanix_prism_proxy_name is provided
   ansible.builtin.fail:
-    msg: var nutanix_proxy_name is required
+    msg: var role_nutanix_prism_proxy_name is required
   when:
-    - nutanix_proxy_name is not defined
+    - role_nutanix_prism_proxy_name is not defined
 
-- name: Check nutanix_proxy_address is provided
+- name: Check role_nutanix_prism_proxy_address is provided
   ansible.builtin.fail:
-    msg: var nutanix_proxy_address is required
+    msg: var role_nutanix_prism_proxy_address is required
   when:
-    - nutanix_proxy_address is not defined
+    - role_nutanix_prism_proxy_address is not defined
 
-- name: Check nutanix_proxy_port is provided
+- name: Check role_nutanix_prism_proxy_port is provided
   ansible.builtin.fail:
-    msg: var nutanix_proxy_port is required
+    msg: var role_nutanix_prism_proxy_port is required
   when:
-    - nutanix_proxy_port is not defined
+    - role_nutanix_prism_proxy_port is not defined
 
-- name: Check nutanix_proxy_types is provided
+- name: Check role_nutanix_prism_proxy_types is provided
   ansible.builtin.fail:
-    msg: var nutanix_proxy_types is required
+    msg: var role_nutanix_prism_proxy_types is required
   when:
-    - nutanix_proxy_types is not defined
+    - role_nutanix_prism_proxy_types is not defined
 
 - name: Setup connection to Nutanix API
-  ansible.builtin.include_tasks: setup_api.yml
+  ansible.builtin.include_role:
+    name: grdavies.role_nutanix_prism_api
+  vars:
+    role_nutanix_prism_api_host: "{{ role_nutanix_prism_proxy_host }}"
+    role_nutanix_prism_api_username: "{{ role_nutanix_prism_proxy_host_username }}"
+    role_nutanix_prism_api_password: "{{ role_nutanix_prism_proxy_host_password }}"
+    role_nutanix_prism_api_port: "{{ role_nutanix_prism_proxy_host_port | default(omit) }}"
+    role_nutanix_prism_api_validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs | default(omit) }}"
+    role_nutanix_prism_api_debug: "{{ role_nutanix_prism_proxy_debug | default(omit) }}"
 
 - name: Inputs for proxy server task
   ansible.builtin.include_tasks: proxy.yml
 
 - name: Inputs for proxy server whitelist task
   ansible.builtin.include_tasks: whitelist.yml
-  when: nutanix_proxy_whitelist | length > 0
-
-- name: Debug
-  ansible.builtin.include_tasks: debug.yml
-  when:
-    - nutanix_debug
+  when: role_nutanix_prism_proxy_whitelist | length > 0

@@ -1,112 +1,177 @@
 ---
 - name: Gather proxy configuration from cluster
   ansible.builtin.uri:
-    url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies"
+    url: "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v2.0/http_proxies"
     method: GET
-    validate_certs: "{{ validate_certs }}"
+    validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs }}"
     body_format: json
     headers:
-      Authorization: "{{ nutanix_api_auth }}"
+      Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
     return_content: true
-  register: nutanix_configured_proxies
+  register: role_nutanix_prism_proxy_current_config
+
+- name: Debug role_nutanix_prism_proxy_current_config
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_current_config }}"
+  when:
+    - role_nutanix_prism_proxy_debug
+    - role_nutanix_prism_proxy_current_config is defined
 
 - name: Compare current proxy name to new proxy name
   ansible.builtin.set_fact:
-    nutanix_proxy_name_mismatch:
+    role_nutanix_prism_proxy_name_mismatch:
   when:
-    - nutanix_configured_proxies.json.metadata.count == 1
-    - nutanix_configured_proxies.json.entities[0].name != nutanix_proxy_name
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 1
+    - role_nutanix_prism_proxy_current_config.json.entities[0].name != role_nutanix_prism_proxy_name
+
+- name: Debug role_nutanix_prism_proxy_name_mismatch
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_name_mismatch }}"
+  when:
+    - role_nutanix_prism_proxy_debug
+    - role_nutanix_prism_proxy_name_mismatch is defined
 
 - name: Compare current proxy config to new proxy config
   ansible.builtin.set_fact:
-    nutanix_proxy_config_mismatch:
+    role_nutanix_prism_proxy_mismatch:
   when:
-    - nutanix_configured_proxies.json.metadata.count == 1
-    - ( nutanix_configured_proxies.json.entities[0].address != nutanix_proxy_address or
-      nutanix_configured_proxies.json.entities[0].port != nutanix_proxy_port or
-      nutanix_configured_proxies.json.entities[0].username != nutanix_proxy_username | default(None) )
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 1
+    - ( role_nutanix_prism_proxy_current_config.json.entities[0].address != role_nutanix_prism_proxy_address or
+      role_nutanix_prism_proxy_current_config.json.entities[0].port != role_nutanix_prism_proxy_port or
+      role_nutanix_prism_proxy_current_config.json.entities[0].username != role_nutanix_prism_proxy_username | default(None) )
+
+- name: Debug role_nutanix_prism_proxy_mismatch
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_mismatch }}"
+  when:
+    - role_nutanix_prism_proxy_debug
+    - role_nutanix_prism_proxy_mismatch is defined
 
 - name: Compare configured proxy types to defined proxy types
   ansible.builtin.set_fact:
-    nutanix_proxy_extra_type:
+    role_nutanix_prism_proxy_extra_type:
   when:
-    - nutanix_configured_proxies.json.metadata.count == 1
-    - item not in nutanix_proxy_types
-  with_items: "{{ nutanix_configured_proxies.json.entities[0].proxy_types }}"
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 1
+    - item not in role_nutanix_prism_proxy_types
+  with_items: "{{ role_nutanix_prism_proxy_current_config.json.entities[0].proxy_types }}"
+
+- name: Debug role_nutanix_prism_proxy_extra_type
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_extra_type }}"
+  when:
+    - role_nutanix_prism_proxy_debug
+    - role_nutanix_prism_proxy_extra_type is defined
 
 - name: Compare defined proxy types to configured proxy types
   ansible.builtin.set_fact:
-    nutanix_proxy_missing_type:
+    role_nutanix_prism_proxy_missing_type:
   when:
-    - nutanix_configured_proxies.json.metadata.count == 1
-    - item not in nutanix_configured_proxies.json.entities[0].proxy_types
-  with_items: "{{ nutanix_proxy_types }}"
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 1
+    - item not in role_nutanix_prism_proxy_current_config.json.entities[0].proxy_types
+  with_items: "{{ role_nutanix_prism_proxy_types }}"
+
+- name: Debug role_nutanix_prism_proxy_missing_type
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_missing_type }}"
+  when:
+    - role_nutanix_prism_proxy_debug
+    - role_nutanix_prism_proxy_missing_type is defined
 
 - name: Delete prism proxy configuration to fix name mismatch
   ansible.builtin.uri:
-    url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies/{{ nutanix_configured_proxies.json.entities[0].name }}"
+    url:
+      "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v2.0/http_proxies/\
+      {{ role_nutanix_prism_proxy_current_config.json.entities[0].name }}"
     method: DELETE
-    validate_certs: "{{ validate_certs }}"
+    validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs }}"
     body_format: json
     headers:
-      Authorization: "{{ nutanix_api_auth }}"
+      Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
     status_code: 204
     return_content: true
   changed_when: true
-  register: nutanix_proxy_deleted
+  register: role_nutanix_prism_proxy_deleted
   when:
-    - nutanix_configured_proxies.json.metadata.count == 1
-    - nutanix_proxy_name_mismatch is defined
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 1
+    - role_nutanix_prism_proxy_name_mismatch is defined
+
+- name: Debug role_nutanix_prism_proxy_deleted
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_deleted }}"
+  when:
+    - role_nutanix_prism_proxy_debug
+    - role_nutanix_prism_proxy_deleted is defined
 
 - name: Create proxy configuration
   ansible.builtin.uri:
-    url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies"
+    url: "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v2.0/http_proxies"
     method: POST
-    validate_certs: "{{ validate_certs }}"
+    validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs }}"
     body: "{{ lookup('template', 'proxy.j2') | from_yaml | to_json }}"
     body_format: json
     status_code: 201
     headers:
-      Authorization: "{{ nutanix_api_auth }}"
+      Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
     return_content: true
-  register: nutanix_create_proxy
+  register: role_nutanix_prism_proxy_create
   when:
-    - nutanix_configured_proxies.json.metadata.count == 0 or nutanix_proxy_name_mismatch is defined
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 0 or role_nutanix_prism_proxy_name_mismatch is defined
+
+- name: Debug role_nutanix_prism_proxy_create
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_create }}"
+  when:
+    - role_nutanix_prism_proxy_debug
+    - role_nutanix_prism_proxy_create is defined
 
 - name: Update proxy configuration
   ansible.builtin.uri:
-    url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies"
+    url: "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v2.0/http_proxies"
     method: PUT
-    validate_certs: "{{ validate_certs }}"
+    validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs }}"
     body: "{{ lookup('template', 'proxy.j2') | from_yaml | to_json }}"
     body_format: json
     status_code: 200
     headers:
-      Authorization: "{{ nutanix_api_auth }}"
+      Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
     return_content: true
-  register: nutanix_update_proxy
-  changed_when: nutanix_update_proxy.json.value == true
+  register: role_nutanix_prism_proxy_update
+  changed_when: role_nutanix_prism_proxy_update.json.value == true
   when:
-    - nutanix_configured_proxies.json.metadata.count == 1
-    - nutanix_proxy_name_mismatch is not defined
-    - nutanix_proxy_config_mismatch is defined
+    - role_nutanix_prism_proxy_current_config.json.metadata.count == 1
+    - role_nutanix_prism_proxy_name_mismatch is not defined
+    - role_nutanix_prism_proxy_mismatch is defined
+
+- name: Debug role_nutanix_prism_proxy_update
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_update }}"
+  when:
+    - role_nutanix_prism_proxy_debug
+    - role_nutanix_prism_proxy_update is defined
 
 - name: Wait HTTP proxy update to be completed
   block:
     - name: Checking HTTP proxy configuration
       ansible.builtin.uri:
-        url: "https://{{ nutanix_host }}:{{ nutanix_port }}/PrismGateway/services/rest/v2.0/http_proxies"
+        url: "https://{{ role_nutanix_prism_api_url_base }}/PrismGateway/services/rest/v2.0/http_proxies"
         method: GET
-        validate_certs: "{{ validate_certs }}"
+        validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs }}"
         status_code: 200
         headers:
-          Authorization: "{{ nutanix_api_auth }}"
-      register: nutanix_proxy_status
+          Authorization: "{{ role_nutanix_prism_api_auth_string_b64 }}"
+      register: role_nutanix_prism_proxy_status
       until:
-        - nutanix_proxy_status.json.entities[0].name == nutanix_proxy_name
-        - nutanix_proxy_status.json.entities[0].address == nutanix_proxy_address
-        - nutanix_proxy_status.json.entities[0].port == nutanix_proxy_port
-        - nutanix_proxy_status.json.entities[0].username == nutanix_proxy_username | default(None)
+        - role_nutanix_prism_proxy_status.json.entities[0].name == role_nutanix_prism_proxy_name
+        - role_nutanix_prism_proxy_status.json.entities[0].address == role_nutanix_prism_proxy_address
+        - role_nutanix_prism_proxy_status.json.entities[0].port == role_nutanix_prism_proxy_port
+        - role_nutanix_prism_proxy_status.json.entities[0].username == role_nutanix_prism_proxy_username | default(None)
       retries: 60
       delay: 10
-      when: nutanix_create_proxy is defined or nutanix_update_proxy is defined
+      when: role_nutanix_prism_proxy_create is defined or role_nutanix_prism_proxy_update is defined
+
+- name: Debug role_nutanix_prism_proxy_status
+  ansible.builtin.debug:
+    msg: "{{ role_nutanix_prism_proxy_status }}"
+  when:
+    - role_nutanix_prism_proxy_debug
+    - role_nutanix_prism_proxy_status is defined
