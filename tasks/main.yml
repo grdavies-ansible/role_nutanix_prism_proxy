@@ -28,10 +28,10 @@
     name: grdavies.role_nutanix_prism_api
   vars:
     role_nutanix_prism_api_host: "{{ role_nutanix_prism_proxy_host }}"
-    role_nutanix_prism_api_username: "{{ role_nutanix_prism_proxy_host_username }}"
-    role_nutanix_prism_api_password: "{{ role_nutanix_prism_proxy_host_password }}"
-    role_nutanix_prism_api_port: "{{ role_nutanix_prism_proxy_host_port | default(omit) }}"
-    role_nutanix_prism_api_validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs | default(omit) }}"
+    role_nutanix_prism_api_host_username: "{{ role_nutanix_prism_proxy_host_username }}"
+    role_nutanix_prism_api_host_password: "{{ role_nutanix_prism_proxy_host_password }}"
+    role_nutanix_prism_api_host_port: "{{ role_nutanix_prism_proxy_host_port | default(omit) }}"
+    role_nutanix_prism_api_host_validate_certs: "{{ role_nutanix_prism_proxy_host_validate_certs | default(omit) }}"
     role_nutanix_prism_api_debug: "{{ role_nutanix_prism_proxy_debug | default(omit) }}"
 
 - name: Inputs for proxy server task
